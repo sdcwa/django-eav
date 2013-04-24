@@ -1,6 +1,22 @@
 django-eav
 ==========
 
+The Isotoma Fork
+----------------
+
+There are over forty forks of this unmaintained project now so to summarise the
+goals of our fork:
+
+  - Allow further extensibility of the BaseEntityForm so that the attributes
+    shown can be further filtered per-form-instance. The use-case is when there
+    is data in the request that affects the values you show on your form that
+    cannot be passed to the get_attributes method on an EavConfig object.
+
+  - Fix up the setup.py configuration and add a MANIFEST.in to allow us to
+    package the application.
+
+  - Fix bugs as we find them, ideally pulling in patches from other forks where
+    possible.
 
 Introduction
 ------------
