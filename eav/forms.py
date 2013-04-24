@@ -60,11 +60,14 @@ class BaseDynamicEntityForm(ModelForm):
         self.entity = getattr(self.instance, config_cls.eav_attr)
         self._build_dynamic_fields()
 
+    def get_attributes(self):
+        return self.entity.get_all_attributes()
+
     def _build_dynamic_fields(self):
         # reset form fields
         self.fields = deepcopy(self.base_fields)
 
-        for attribute in self.entity.get_all_attributes():
+        for attribute in self.get_attributes():
             value = getattr(self.entity, attribute.slug)
 
             defaults = {
@@ -114,7 +117,7 @@ class BaseDynamicEntityForm(ModelForm):
         instance = super(BaseDynamicEntityForm, self).save(commit=False)
 
         # assign attributes
-        for attribute in self.entity.get_all_attributes():
+        for attribute in self.get_attributes():
             value = self.cleaned_data.get(attribute.slug)
             if attribute.datatype == attribute.TYPE_ENUM:
                 if value:
