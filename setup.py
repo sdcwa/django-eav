@@ -16,25 +16,20 @@
 #
 #    You should have received a copy of the GNU Lesser General Public License
 #    along with EAV-Django.  If not, see <http://gnu.org/licenses/>.
-from distutils.core import setup
+
+from setuptools import setup
 
 setup(
     name='django-eav',
-    version=__import__('eav').__version__,
-    license = 'GNU Lesser General Public License (LGPL), Version 3',
-
-    requires = ['python (>= 2.5)', 'django (>= 1.2)'],
-    provides = ['eav'],
-
-    description='Entity-attribute-value model implementation as a reusable'
-                'Django app.',
+    version='0.9.2-isotoma1',
+    description='Entity-attribute-value model implementation as a reusable Django app',
     long_description=open('README.rst').read(),
-
-    url='http://github.com/mvpdev/django-eav',
-
+    license = 'GNU Lesser General Public License (LGPL), Version 3',
+    url='https://github.com/mvpdev/django-eav',
     packages=['eav', 'eav.tests'],
-
-    classifiers  = [
+    include_package_data=True,
+    zip_safe=False,
+    classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
         'Framework :: Django',
