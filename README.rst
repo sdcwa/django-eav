@@ -12,6 +12,10 @@ goals of our fork:
     is data in the request that affects the values you show on your form that
     cannot be passed to the get_attributes method on an EavConfig object.
 
+  - Use a ModelChoiceField for the EnumValue drop down entries, to fix a bug
+    where ``Must be an EnumValue model object instance`` validation errors were
+    raised whenever a value was set on a drop-down.
+
   - Fix up the setup.py configuration and add a MANIFEST.in to allow us to
     package the application.
 

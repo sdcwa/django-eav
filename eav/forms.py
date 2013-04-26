@@ -29,7 +29,7 @@ Classes
 from copy import deepcopy
 
 from django.forms import BooleanField, CharField, DateTimeField, FloatField, \
-                         IntegerField, ModelForm, ChoiceField, ValidationError
+                         IntegerField, ModelForm, ModelChoiceField, ValidationError
 from django.contrib.admin.widgets import AdminSplitDateTime
 from django.utils.translation import ugettext_lazy as _
 
@@ -51,7 +51,7 @@ class BaseDynamicEntityForm(ModelForm):
         'int': IntegerField,
         'date': DateTimeField,
         'bool': BooleanField,
-        'enum': ChoiceField,
+        'enum': ModelChoiceField,
     }
 
     def __init__(self, data=None, *args, **kwargs):
@@ -79,14 +79,13 @@ class BaseDynamicEntityForm(ModelForm):
 
             datatype = attribute.datatype
             if datatype == attribute.TYPE_ENUM:
-                enums = attribute.get_choices() \
-                                 .values_list('id', 'value')
+                defaults.update({
+                    'queryset': attribute.get_choices(),
+                    'empty_label': '-----',
+                })
 
-                choices = [('', '-----')] + list(enums)
-
-                defaults.update({'choices': choices})
                 if value:
-                    defaults.update({'initial': value.pk})
+                    defaults.update({'initial': value})
 
             elif datatype == attribute.TYPE_DATE:
                 defaults.update({'widget': AdminSplitDateTime})
@@ -119,12 +118,6 @@ class BaseDynamicEntityForm(ModelForm):
         # assign attributes
         for attribute in self.get_attributes():
             value = self.cleaned_data.get(attribute.slug)
-            if attribute.datatype == attribute.TYPE_ENUM:
-                if value:
-                    value = attribute.enum_group.enums.get(pk=value)
-                else:
-                    value = None
-
             setattr(self.entity, attribute.slug, value)
 
         # save entity and its attributes
