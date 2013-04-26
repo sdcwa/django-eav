@@ -21,7 +21,7 @@ from setuptools import setup
 
 setup(
     name='django-eav',
-    version='0.9.2-isotoma1',
+    version='0.9.2-isotoma2',
     description='Entity-attribute-value model implementation as a reusable Django app',
     long_description=open('README.rst').read(),
     license = 'GNU Lesser General Public License (LGPL), Version 3',
