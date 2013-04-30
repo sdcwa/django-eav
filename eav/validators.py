@@ -107,3 +107,15 @@ def validate_enum(value):
         raise ValidationError(_(u"Must be an EnumValue model object instance"))
     if not value.pk:
         raise ValidationError(_(u"EnumValue has not been saved yet"))
+
+
+def validate_tree(value):
+    '''
+    Raises ``ValidationError`` unless *value* is a saved
+    :class:`~eav.models.TreeItem` model instance.
+    '''
+    from .models import TreeItem
+    if not isinstance(value, TreeItem):
+        raise ValidationError(_(u"Must be a TreeItem model object instance"))
+    if not value.pk:
+        raise ValidationError(_(u"TreeItem has not been saved yet."))

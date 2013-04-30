@@ -29,6 +29,10 @@ setup(
     packages=['eav', 'eav.tests'],
     include_package_data=True,
     zip_safe=False,
+    install_requires=[
+        'django-mptt',
+        'django-mptt-admin',
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',

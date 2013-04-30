@@ -44,6 +44,8 @@ from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager
 from django.conf import settings
 
+from mptt.models import MPTTModel, TreeForeignKey
+
 from .validators import *
 from .fields import EavSlugField, EavDatatypeField
 
@@ -98,6 +100,25 @@ class EnumGroup(models.Model):
 
     def __unicode__(self):
         return self.name
+
+
+class TreeItem(MPTTModel):
+    '''
+    TreeItem objects ae the value choices to nested multiple choice
+    :class:`Attribute` objects. They have one field *value*, a ``CharField``
+    that does not have to be unique (since the same value could exist for a
+    different parent.
+    '''
+
+    value = models.CharField(max_length=150)
+    code = models.CharField(max_length=15, null=True, blank=True)
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
+
+    class MPTTMeta:
+        order_insertion_by = ['value']
+
+    def __unicode__(self):
+        return self.value
 
 
 class Attribute(models.Model):
@@ -161,6 +182,7 @@ class Attribute(models.Model):
     TYPE_BOOLEAN = 'bool'
     TYPE_OBJECT = 'object'
     TYPE_ENUM = 'enum'
+    TYPE_TREE = 'tree'
 
     DATATYPE_CHOICES = (
         (TYPE_TEXT, _(u"Text")),
@@ -170,6 +192,7 @@ class Attribute(models.Model):
         (TYPE_BOOLEAN, _(u"True / False")),
         (TYPE_OBJECT, _(u"Django Object")),
         (TYPE_ENUM, _(u"Multiple Choice")),
+        (TYPE_TREE, _(u"Tree Field")),
     )
 
     name = models.CharField(_(u"name"), max_length=100,
@@ -187,6 +210,8 @@ class Attribute(models.Model):
 
     enum_group = models.ForeignKey(EnumGroup, verbose_name=_(u"choice group"),
                                    blank=True, null=True)
+
+    tree_item_parent = models.ForeignKey(TreeItem, blank=True, null=True)
 
     type = models.CharField(_(u"type"), max_length=20, blank=True, null=True)
 
@@ -225,6 +250,7 @@ class Attribute(models.Model):
             'bool': validate_bool,
             'object': validate_object,
             'enum': validate_enum,
+            'tree': validate_tree,
         }
 
         validation_function = DATATYPE_VALIDATORS[self.datatype]
@@ -242,6 +268,9 @@ class Attribute(models.Model):
                 raise ValidationError(_(u"%(enum)s is not a valid choice "
                                         u"for %(attr)s") % \
                                        {'enum': value, 'attr': self})
+        if self.datatype == self.TYPE_TREE:
+            if not value.is_leaf_node():
+                raise ValidationError(_("Invalid choice"))
 
     def save(self, *args, **kwargs):
         '''
@@ -346,6 +375,8 @@ class Value(models.Model):
     value_bool = models.NullBooleanField(blank=True, null=True)
     value_enum = models.ForeignKey(EnumValue, blank=True, null=True,
                                    related_name='eav_values')
+    value_tree = models.ForeignKey(TreeItem, blank=True, null=True,
+                                   related_name='tree_items')
 
     generic_value_id = models.IntegerField(blank=True, null=True)
     generic_value_ct = models.ForeignKey(ContentType, blank=True, null=True,

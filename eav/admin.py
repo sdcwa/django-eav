@@ -20,12 +20,15 @@
 
 from django.contrib import admin
 from django.contrib.admin.options import (
-    ModelAdmin, InlineModelAdmin, StackedInline
+    ModelAdmin, InlineModelAdmin, StackedInline, TabularInline,
 )
 from django.forms.models import BaseInlineFormSet
+from django import forms
 from django.utils.safestring import mark_safe
 
-from .models import Attribute, Value, EnumValue, EnumGroup
+from django_mptt_admin.admin import DjangoMpttAdmin
+
+from .models import Attribute, Value, EnumValue, EnumGroup, TreeItem
 
 class BaseEntityAdmin(ModelAdmin):
     
@@ -93,13 +96,36 @@ class BaseEntityInline(InlineModelAdmin):
 
         return [(None, {'fields': form.fields.keys()})]
 
+
+class AttributeModelForm(forms.ModelForm):
+    tree_item_parent = forms.ModelChoiceField(
+        queryset=TreeItem.objects.root_nodes(), required=False)
+
+
 class AttributeAdmin(ModelAdmin):
     list_display = ('name', 'slug', 'datatype', 'description', 'site')
     list_filter = ['site']
     prepopulated_fields = {'slug': ('name',)}
+    form = AttributeModelForm
+
+
+class TreeItemModelAdmin(DjangoMpttAdmin):
+    list_display = ('value', 'code')
+    search_fields = ('value',)
+    mptt_level_indent = 20
+    tree_auto_open = True
+
+
+class TreeItemInlineAdmin(StackedInline):
+    model = TreeItem
+
+
+class TreeGroupModelAdmin(ModelAdmin):
+    inlines = (TreeItemInlineAdmin,)
+
 
 admin.site.register(Attribute, AttributeAdmin)
 admin.site.register(Value)
 admin.site.register(EnumValue)
 admin.site.register(EnumGroup)
-
+admin.site.register(TreeItem, TreeItemModelAdmin)

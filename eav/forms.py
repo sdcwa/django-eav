@@ -30,8 +30,51 @@ from copy import deepcopy
 
 from django.forms import BooleanField, CharField, DateTimeField, FloatField, \
                          IntegerField, ModelForm, ModelChoiceField, ValidationError
+from django.forms.widgets import MultiWidget, Select
 from django.contrib.admin.widgets import AdminSplitDateTime
 from django.utils.translation import ugettext_lazy as _
+
+from .models import TreeItem
+
+
+class TreeItemWidget(MultiWidget):
+
+    def __init__(self, querysets, attrs={}):
+        self._widgets = []
+        for qs in querysets:
+            this_attrs = attrs.copy()
+            if qs:
+                choices = qs.values_list('id', 'value') if qs else ()
+            else:
+                choices = ()
+                this_attrs.update({'disabled': 'disabled'})
+
+            self._widgets.append(Select(attrs=this_attrs, choices=choices))
+        super(TreeItemWidget, self).__init__(self._widgets, attrs)
+
+    def decompress(self, value):
+        """
+        Take a single stored leaf node value and return additional values for
+        each parent tier. If no leaf node value exists, return None values for
+        each tier.
+        """
+        if value:
+            ti = TreeItem.objects.get(pk=value)
+            ancestors = ti.get_ancestors().exclude(pk=ti.get_root().id)
+            return [a.id for a in ancestors] + [ti.id]
+        return [None for w in range(len(self._widgets))]
+
+    def format_output(self, rendered_widgets):
+        return u''.join(rendered_widgets)
+
+    def value_from_datadict(self, data, files, name):
+        values = [
+            widget.value_from_datadict(data, files, name + '_%s' % i)
+            for i, widget in enumerate(self.widgets)]
+        try:
+            return values[-1]
+        except ValueError:
+            return ''
 
 
 class BaseDynamicEntityForm(ModelForm):
@@ -52,6 +95,7 @@ class BaseDynamicEntityForm(ModelForm):
         'date': DateTimeField,
         'bool': BooleanField,
         'enum': ModelChoiceField,
+        'tree': ModelChoiceField,
     }
 
     def __init__(self, data=None, *args, **kwargs):
@@ -89,8 +133,32 @@ class BaseDynamicEntityForm(ModelForm):
 
             elif datatype == attribute.TYPE_DATE:
                 defaults.update({'widget': AdminSplitDateTime})
+
             elif datatype == attribute.TYPE_OBJECT:
                 continue
+
+            elif datatype == attribute.TYPE_TREE:
+                defaults.update({'queryset': attribute.tree_item_parent.get_leafnodes()})
+                depth = attribute.tree_item_parent.get_leafnodes()[0].get_level()
+                querysets = []
+
+                if value:
+                    current_value = value
+                    while current_value != attribute.tree_item_parent:
+                        # cannot use get_siblings() because we need to include current_value
+                        querysets.append(current_value.parent.children.all())
+                        current_value = current_value.parent
+                    querysets.reverse()
+                    assert depth == len(querysets), 'Need querysets for each level'
+                else:
+                    querysets.append(attribute.tree_item_parent.children.all())
+                    for i in range(depth - 1):
+                        querysets.append([])
+
+                defaults.update({
+                    'widget': TreeItemWidget(querysets),
+                    'initial': value,
+                })
 
             MappedField = self.FIELD_CLASSES[datatype]
             self.fields[attribute.slug] = MappedField(**defaults)
