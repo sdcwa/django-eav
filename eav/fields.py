@@ -50,7 +50,7 @@ class EavSlugField(models.SlugField):
         var variables we don't want to be saved in db.
         '''
         super(EavSlugField, self).validate(value, instance)
-        slug_regex = r'[a-z][a-z0-9_]*'
+        slug_regex = r'^[a-z][a-z0-9_]*$'
         if not re.match(slug_regex, value):
             raise ValidationError(_(u"Must be all lower case, " \
                                     u"start with a letter, and contain " \

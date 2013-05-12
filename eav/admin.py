@@ -22,6 +22,7 @@ from django.contrib import admin
 from django.contrib.admin.options import (
     ModelAdmin, InlineModelAdmin, StackedInline
 )
+from django.contrib.staticfiles.storage import staticfiles_storage as static
 from django.forms.models import BaseInlineFormSet
 from django.utils.safestring import mark_safe
 
@@ -94,6 +95,12 @@ class BaseEntityInline(InlineModelAdmin):
         return [(None, {'fields': form.fields.keys()})]
 
 class AttributeAdmin(ModelAdmin):
+
+    class Media:
+        js = (
+            static.url('eav/js/attribute_admin.js'),
+        )
+
     list_display = ('name', 'slug', 'datatype', 'description', 'site')
     list_filter = ['site']
     prepopulated_fields = {'slug': ('name',)}
