@@ -33,6 +33,7 @@ from django.forms import BooleanField, CharField, DateTimeField, FloatField, \
 from django.forms.widgets import MultiWidget, Select
 from django.contrib.admin.widgets import AdminSplitDateTime
 from django.utils.translation import ugettext_lazy as _
+from django.utils.safestring import mark_safe
 
 from .models import TreeItem
 
@@ -47,7 +48,7 @@ class TreeItemWidget(MultiWidget):
                 choices = qs.values_list('id', 'value') if qs else ()
             else:
                 choices = ()
-                this_attrs.update({'disabled': 'disabled'})
+                #this_attrs.update({'disabled': 'disabled'})
 
             self._widgets.append(Select(attrs=this_attrs, choices=choices))
         super(TreeItemWidget, self).__init__(self._widgets, attrs)
@@ -63,6 +64,17 @@ class TreeItemWidget(MultiWidget):
             ancestors = ti.get_ancestors().exclude(pk=ti.get_root().id)
             return [a.id for a in ancestors] + [ti.id]
         return [None for w in range(len(self._widgets))]
+
+    def render(self, name, value, attrs=None):
+        rendered = super(TreeItemWidget, self).render(name, value, attrs)
+        treefield_script = """
+            <script type="text/javascript">
+              $.fn.treefield && $('#id_{0}_{1}').treefield(treeChildUrl);
+            </script>
+        """
+        for i in range(len(self._widgets)-1):
+            rendered += mark_safe(treefield_script.format(name, i))
+        return rendered
 
     def format_output(self, rendered_widgets):
         return u''.join(rendered_widgets)
