@@ -22,6 +22,9 @@ goals of our fork:
   - Fix bugs as we find them, ideally pulling in patches from other forks where
     possible.
 
+  - Fixes the slug validation where hyphens were previously valid
+
+
 Introduction
 ------------
 
