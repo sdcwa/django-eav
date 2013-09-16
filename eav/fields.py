@@ -88,3 +88,10 @@ class EavDatatypeField(models.CharField):
         if instance.value_set.count():
             raise ValidationError(_(u"You cannot change the datatype of an "
                                     u"attribute that is already in use."))
+try:
+    from south.modelsinspector import add_introspection_rules
+except ImportError:
+    pass
+else:
+    add_introspection_rules([], ["^eav\.fields\.EavSlugField"])
+    add_introspection_rules([], ["^eav\.fields\.EavDatatypeField"])
