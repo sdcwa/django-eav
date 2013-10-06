@@ -26,7 +26,7 @@ setup(
     long_description=open('README.rst').read(),
     license = 'GNU Lesser General Public License (LGPL), Version 3',
     url='https://github.com/mvpdev/django-eav',
-    packages=['eav', 'eav.tests'],
+    packages=['eav', 'eav.tests', 'eav.migrations'],
     include_package_data=True,
     zip_safe=False,
     classifiers=[
