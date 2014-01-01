@@ -19,18 +19,22 @@
 
 
 from django.contrib import admin
+from django.contrib.admin import helpers
 from django.contrib.admin.options import (
     ModelAdmin, InlineModelAdmin, StackedInline
 )
 from django.contrib.staticfiles.storage import staticfiles_storage as static
 from django.forms.models import BaseInlineFormSet
 from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
 
 from .models import Attribute, Value, EnumValue, EnumGroup
 
 class BaseEntityAdmin(ModelAdmin):
+
+    eav_fieldsets = None
     
-    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None, **kwargs):
         """
         Wrapper for ModelAdmin.render_change_form. Replaces standard static
         AdminForm with an EAV-friendly one. The point is that our form generates
@@ -40,17 +44,41 @@ class BaseEntityAdmin(ModelAdmin):
         substitute some data.
         """
         form = context['adminform'].form
+        formset = context['inline_admin_formsets']
 
-        # infer correct data from the form
-        fieldsets = self.fieldsets or [(None, {'fields': form.fields.keys()})]
-        adminform = admin.helpers.AdminForm(form, fieldsets,
+        all_fields = form.fields.keys()
+        model_fields = form.base_fields.keys()
+        eav_fields = filter(lambda x: x not in model_fields, all_fields)
+
+        if self.eav_fieldsets:
+            is_set = False
+            fieldsets_eav = self.eav_fieldsets
+            eav_fieldset = {'classes': ('collapse',), 'fields': tuple(eav_fields)}
+            fieldsets=[]
+            for fieldset in fieldsets_eav:
+
+                if fieldset[1]=='eav_fields':
+                    fieldsets.append((fieldset[0], eav_fieldset))
+                    is_set = True
+                else:
+                    fieldsets.append(fieldset)
+            if not is_set:
+                fieldsets.append((_('Attributes'), eav_fieldset),)
+        else:
+            # or infer correct data from the form
+            fieldsets = [(None, {'fields': all_fields})]
+
+        print fieldsets
+
+        adminform = helpers.AdminForm(form, fieldsets,
                                       self.prepopulated_fields)
-        media = mark_safe(self.media + adminform.media)
+        inline_media = reduce( lambda x, y: x.media + y.media, formset )
 
+        media = mark_safe(self.media + adminform.media + inline_media)
         context.update(adminform=adminform, media=media)
 
         super_meth = super(BaseEntityAdmin, self).render_change_form
-        return super_meth(request, context, add, change, form_url, obj)
+        return super_meth(request, context, **kwargs)
 
 
 class BaseEntityInlineFormSet(BaseInlineFormSet):
