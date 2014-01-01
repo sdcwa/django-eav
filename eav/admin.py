@@ -33,7 +33,8 @@ from .models import Attribute, Value, EnumValue, EnumGroup
 class BaseEntityAdmin(ModelAdmin):
 
     eav_fieldsets = None
-    
+    processed_fieldsets = None
+
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None, **kwargs):
         """
         Wrapper for ModelAdmin.render_change_form. Replaces standard static
@@ -51,24 +52,33 @@ class BaseEntityAdmin(ModelAdmin):
         eav_fields = filter(lambda x: x not in model_fields, all_fields)
 
         if self.eav_fieldsets:
-            is_set = False
-            fieldsets_eav = self.eav_fieldsets
-            eav_fieldset = {'classes': ('collapse',), 'fields': tuple(eav_fields)}
-            fieldsets=[]
-            for fieldset in fieldsets_eav:
 
-                if fieldset[1]=='eav_fields':
-                    fieldsets.append((fieldset[0], eav_fieldset))
-                    is_set = True
-                else:
-                    fieldsets.append(fieldset)
-            if not is_set:
-                fieldsets.append((_('Attributes'), eav_fieldset),)
+            if not self.processed_fieldsets:
+
+                fieldsets_eav = self.eav_fieldsets
+                self.processed_fieldsets=[]
+
+                is_set = False
+
+                for fieldset in fieldsets_eav:
+
+                    if fieldset[1]['fields']=='eav_fields':
+                        new_fields_dict = fieldset[1]
+                        new_fields_dict['fields']=tuple(eav_fields)
+                        self.processed_fieldsets.append((fieldset[0], new_fields_dict))
+                        is_set = True
+                    else:
+                        self.processed_fieldsets.append(fieldset)
+                if not is_set:
+                    self.processed_fieldsets.append((_('Attributes'), {'classes': ('collapse',), 'fields': tuple(eav_fields)}),)
+
+            fieldsets = self.processed_fieldsets
+
         else:
             # or infer correct data from the form
             fieldsets = [(None, {'fields': all_fields})]
 
-        print fieldsets
+        self.eav_fieldsets_processed = True
 
         adminform = helpers.AdminForm(form, fieldsets,
                                       self.prepopulated_fields)
