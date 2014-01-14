@@ -17,7 +17,7 @@
 #    You should have received a copy of the GNU Lesser General Public License
 #    along with EAV-Django.  If not, see <http://gnu.org/licenses/>.
 
-
+from copy import deepcopy
 from django.contrib import admin
 from django.contrib.admin import helpers
 from django.contrib.admin.options import (
@@ -33,6 +33,7 @@ from .models import Attribute, Value, EnumValue, EnumGroup
 class BaseEntityAdmin(ModelAdmin):
 
     eav_fieldsets = None
+    original_eav_fieldsets = None
     processed_fieldsets = None
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None, **kwargs):
@@ -46,31 +47,31 @@ class BaseEntityAdmin(ModelAdmin):
         """
         form = context['adminform'].form
         formset = context['inline_admin_formsets']
-
         all_fields = form.fields.keys()
         model_fields = form.base_fields.keys()
         eav_fields = filter(lambda x: x not in model_fields, all_fields)
 
+        if not self.original_eav_fieldsets:
+            self.original_eav_fieldsets = deepcopy(self.eav_fieldsets)
+
         if self.eav_fieldsets:
 
-            if not self.processed_fieldsets:
+            fieldsets_eav = deepcopy(self.original_eav_fieldsets)
+            self.processed_fieldsets=[]
 
-                fieldsets_eav = self.eav_fieldsets
-                self.processed_fieldsets=[]
+            is_set = False
 
-                is_set = False
+            for fieldset in fieldsets_eav:
 
-                for fieldset in fieldsets_eav:
-
-                    if fieldset[1]['fields']=='eav_fields':
-                        new_fields_dict = fieldset[1]
-                        new_fields_dict['fields']=tuple(eav_fields)
-                        self.processed_fieldsets.append((fieldset[0], new_fields_dict))
-                        is_set = True
-                    else:
-                        self.processed_fieldsets.append(fieldset)
-                if not is_set:
-                    self.processed_fieldsets.append((_('Attributes'), {'classes': ('collapse',), 'fields': tuple(eav_fields)}),)
+                if fieldset[1]['fields']=='eav_fields':
+                    new_fields_dict = fieldset[1]
+                    new_fields_dict['fields']=tuple(eav_fields)
+                    self.processed_fieldsets.append((fieldset[0], new_fields_dict))
+                    is_set = True
+                else:
+                    self.processed_fieldsets.append(fieldset)
+            if not is_set:
+                self.processed_fieldsets.append((_('Attributes'), {'classes': ('collapse',), 'fields': tuple(eav_fields)}),)
 
             fieldsets = self.processed_fieldsets
 
