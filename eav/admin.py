@@ -83,7 +83,11 @@ class BaseEntityAdmin(ModelAdmin):
 
         adminform = helpers.AdminForm(form, fieldsets,
                                       self.prepopulated_fields)
-        inline_media = reduce( lambda x, y: x.media + y.media, formset )
+
+        if formset:
+            inline_media = reduce( lambda x, y: x.media + y.media, formset )
+        else:
+            inline_media = []
 
         media = mark_safe(self.media + adminform.media + inline_media)
         context.update(adminform=adminform, media=media)
