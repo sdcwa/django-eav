@@ -93,7 +93,7 @@ class BaseEntityAdmin(ModelAdmin):
         context.update(adminform=adminform, media=media)
 
         super_meth = super(BaseEntityAdmin, self).render_change_form
-        return super_meth(request, context, **kwargs)
+        return super_meth(request, context, add=add, change=change, **kwargs)
 
 
 class BaseEntityInlineFormSet(BaseInlineFormSet):
