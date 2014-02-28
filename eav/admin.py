@@ -84,12 +84,18 @@ class BaseEntityAdmin(ModelAdmin):
         adminform = helpers.AdminForm(form, fieldsets,
                                       self.prepopulated_fields)
 
-        if formset:
-            inline_media = reduce( lambda x, y: x.media + y.media, formset )
-        else:
-            inline_media = []
+        # This broke the 'add another" for inlines. I can't see why it's needed
+        # Using the original media array from 'context' seems to work OK for all EAV field types
 
-        media = mark_safe(self.media + adminform.media + inline_media)
+        # if formset:
+        #     inline_media = reduce( lambda x, y: x.media + y.media, formset )
+        # else:
+        #     inline_media = []
+        #
+        # media = mark_safe(self.media + adminform.media + inline_media)
+
+        media = context['media']
+
         context.update(adminform=adminform, media=media)
 
         super_meth = super(BaseEntityAdmin, self).render_change_form
