@@ -95,6 +95,7 @@ class BaseEntityAdmin(ModelAdmin):
         # media = mark_safe(self.media + adminform.media + inline_media)
 
         media = context['media']
+        adminform.readonly_fields = context['adminform'].readonly_fields
 
         context.update(adminform=adminform, media=media)
 
